@@ -72,7 +72,16 @@
       </button>
     );
 
-    // Region presets with market-appropriate defaults
+    // Bedroom-based multipliers for nightly rates, cleaning, and furnishing
+    const BEDROOM_MULTIPLIERS = {
+      1: { rate: 0.70, cleaning: 0.75, furnishing: 0.65, label: '1 BR' },
+      2: { rate: 1.00, cleaning: 1.00, furnishing: 1.00, label: '2 BR' },
+      3: { rate: 1.40, cleaning: 1.30, furnishing: 1.45, label: '3 BR' },
+      4: { rate: 1.75, cleaning: 1.55, furnishing: 1.85, label: '4 BR' },
+      5: { rate: 2.10, cleaning: 1.80, furnishing: 2.20, label: '5+ BR' }
+    };
+
+    // Region presets with market-appropriate defaults (calibrated to 2BR baseline)
     const REGION_PRESETS = {
       rivieraMaya: {
         label: 'Riviera Maya, Mexico',
@@ -168,6 +177,7 @@
 
     const STRFeasibilityCalculator = () => {
       const [region, setRegion] = useState('rivieraMaya');
+      const [bedrooms, setBedrooms] = useState(2);
 
       // Purchase & Financing
       const [purchasePrice, setPurchasePrice] = useState(350000);
@@ -216,21 +226,28 @@
 
       const preset = REGION_PRESETS[region];
 
+      // Scale rates/cleaning/furnishing based on bedroom count relative to 2BR baseline
+      const scaleForBedrooms = (baseRate, brCount, field) => {
+        const m = BEDROOM_MULTIPLIERS[Math.min(Math.max(brCount, 1), 5)];
+        return Math.round(baseRate * m[field]);
+      };
+
       const applyRegionPreset = (regionKey) => {
         if (region !== regionKey && !window.confirm('Switch to ' + REGION_PRESETS[regionKey].label + '? This will reset all inputs to that market\'s defaults.')) {
           return;
         }
         const p = REGION_PRESETS[regionKey];
+        const br = bedrooms;
         setRegion(regionKey);
         setPurchasePrice(p.purchasePrice);
         setDownPaymentPercent(p.downPaymentPercent);
         setInterestRate(p.interestRate);
         setLoanTermYears(p.loanTermYears);
         setClosingCostPercent(p.closingCostPercent);
-        setFurnishingCost(p.furnishingCost);
-        setHighSeasonNightlyRate(p.highSeasonNightlyRate);
-        setLowSeasonNightlyRate(p.lowSeasonNightlyRate);
-        setShoulderSeasonNightlyRate(p.shoulderSeasonNightlyRate);
+        setFurnishingCost(scaleForBedrooms(p.furnishingCost, br, 'furnishing'));
+        setHighSeasonNightlyRate(scaleForBedrooms(p.highSeasonNightlyRate, br, 'rate'));
+        setLowSeasonNightlyRate(scaleForBedrooms(p.lowSeasonNightlyRate, br, 'rate'));
+        setShoulderSeasonNightlyRate(scaleForBedrooms(p.shoulderSeasonNightlyRate, br, 'rate'));
         setHighSeasonOccupancy(p.highSeasonOccupancy);
         setLowSeasonOccupancy(p.lowSeasonOccupancy);
         setShoulderSeasonOccupancy(p.shoulderSeasonOccupancy);
@@ -238,7 +255,7 @@
         setLowSeasonMonths(p.lowSeasonMonths);
         setPersonalUseDays(p.personalUseDays);
         setPropertyMgmtPercent(p.propertyMgmtPercent);
-        setCleaningFeePerTurn(p.cleaningFeePerTurn);
+        setCleaningFeePerTurn(scaleForBedrooms(p.cleaningFeePerTurn, br, 'cleaning'));
         setAvgStayLength(p.avgStayLength);
         setPlatformFeePercent(p.platformFeePercent);
         setHoaMonthly(p.hoaMonthly);
@@ -250,6 +267,18 @@
         setMarketingAnnual(p.marketingAnnual);
         setLandValuePercent(p.landValuePercent);
         setMarketType('consolidated');
+      };
+
+      const handleBedroomChange = (newBr) => {
+        const oldBr = bedrooms;
+        const p = REGION_PRESETS[region];
+        setBedrooms(newBr);
+        // Scale nightly rates from the 2BR baseline (preset values) to the new bedroom count
+        setHighSeasonNightlyRate(scaleForBedrooms(p.highSeasonNightlyRate, newBr, 'rate'));
+        setLowSeasonNightlyRate(scaleForBedrooms(p.lowSeasonNightlyRate, newBr, 'rate'));
+        setShoulderSeasonNightlyRate(scaleForBedrooms(p.shoulderSeasonNightlyRate, newBr, 'rate'));
+        setCleaningFeePerTurn(scaleForBedrooms(p.cleaningFeePerTurn, newBr, 'cleaning'));
+        setFurnishingCost(scaleForBedrooms(p.furnishingCost, newBr, 'furnishing'));
       };
       
       const calculations = useMemo(() => {
@@ -590,7 +619,7 @@
         // --- INVESTMENT SUMMARY ---
         sectionHeader('Investment Summary');
         kvTable([
-          ['Purchase Price', formatCurrency(purchasePrice)],
+          ['Property', bedrooms + ' Bedroom — ' + formatCurrency(purchasePrice)],
           ['Down Payment (' + downPaymentPercent + '%)', formatCurrency(c.downPayment)],
           ['Closing Costs (' + closingCostPercent + '%)', formatCurrency(c.closingCosts)],
           ['Furnishing & Setup', formatCurrency(furnishingCost)],
@@ -773,7 +802,30 @@
                       <h4 className="text-amber-400 font-medium mb-2">📅 Seasonality Model</h4>
                       <p className="text-sm text-slate-400">{preset.seasonalityNote}</p>
                     </div>
-                    
+
+                    <div className="mb-6">
+                      <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">
+                        Property Size
+                        <span className="ml-1.5 text-amber-400 cursor-help" title="Rates, cleaning fees, and furnishing costs auto-scale based on bedroom count. 2BR is the baseline — you can still override any value.">ⓘ</span>
+                      </label>
+                      <div className="flex gap-2">
+                        {Object.entries(BEDROOM_MULTIPLIERS).map(([br, m]) => (
+                          <button
+                            key={br}
+                            onClick={() => handleBedroomChange(parseInt(br))}
+                            className={`flex-1 py-2.5 px-3 text-sm font-medium rounded-lg border transition-all ${parseInt(br) === bedrooms ? 'bg-amber-500 text-slate-900 border-amber-500' : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:text-white hover:border-slate-500'}`}
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                      {bedrooms !== 2 && (
+                        <p className="text-xs text-amber-400/70 mt-2">
+                          Rates scaled {BEDROOM_MULTIPLIERS[Math.min(Math.max(bedrooms, 1), 5)].rate > 1 ? '+' : ''}{Math.round((BEDROOM_MULTIPLIERS[Math.min(Math.max(bedrooms, 1), 5)].rate - 1) * 100)}% from 2BR baseline
+                        </p>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
                         <h4 className="text-emerald-400 font-medium mb-3">🌴 High Season</h4>
