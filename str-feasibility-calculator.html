@@ -178,6 +178,7 @@
     const STRFeasibilityCalculator = () => {
       const [region, setRegion] = useState('rivieraMaya');
       const [bedrooms, setBedrooms] = useState(2);
+      const [propertyName, setPropertyName] = useState('');
 
       // Purchase & Financing
       const [purchasePrice, setPurchasePrice] = useState(350000);
@@ -516,18 +517,29 @@
         doc.setFillColor(...amber);
         doc.rect(0, 38, pageW, 1.5, 'F');
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(20);
-        doc.setTextColor(...white);
-        doc.text('STR Feasibility Report', margin, 16);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(...slate400);
-        doc.text(preset.subtitle, margin, 24);
-
-        const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        doc.text(today, margin, 31);
+        if (propertyName.trim()) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(22);
+          doc.setTextColor(...white);
+          doc.text(propertyName.trim(), margin, 14);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(...slate400);
+          doc.text('STR Feasibility Report • ' + preset.subtitle, margin, 22);
+          const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          doc.text(today, margin, 29);
+        } else {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          doc.setTextColor(...white);
+          doc.text('STR Feasibility Report', margin, 16);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.setTextColor(...slate400);
+          doc.text(preset.subtitle, margin, 24);
+          const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          doc.text(today, margin, 31);
+        }
 
         // Verdict badge
         const verdictColor = c.cashOnCash >= 8 && c.capRate >= 6 ? green
@@ -700,8 +712,12 @@
         }
 
         // Save
+        const nameSlug = propertyName.trim() ? propertyName.trim().replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() : null;
         const regionSlug = preset.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-        doc.save('str-feasibility-' + regionSlug + '-' + new Date().toISOString().slice(0,10) + '.pdf');
+        const filename = nameSlug
+          ? nameSlug + '-' + new Date().toISOString().slice(0,10) + '.pdf'
+          : 'str-feasibility-' + regionSlug + '-' + new Date().toISOString().slice(0,10) + '.pdf';
+        doc.save(filename);
       };
 
       return (
@@ -759,7 +775,18 @@
               {/* Tab Content */}
               <div className="bg-slate-800/20 backdrop-blur border border-slate-700/50 rounded-2xl p-6">
                 {activeTab === 'purchase' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                  <div>
+                    <div className="mb-5">
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Property Name / Nickname</label>
+                      <input
+                        type="text"
+                        value={propertyName}
+                        onChange={(e) => setPropertyName(e.target.value)}
+                        placeholder="e.g. Casa Azul, Beachfront 3BR, Lot 42 Playa Hermosa..."
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2.5 px-3 text-white font-medium placeholder-slate-600 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <div>
                       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <span className="w-6 h-6 rounded bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs">1</span>
@@ -794,8 +821,9 @@
                       </div>
                     </div>
                   </div>
+                  </div>
                 )}
-                
+
                 {activeTab === 'revenue' && (
                   <div>
                     <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
