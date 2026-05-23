@@ -187,6 +187,43 @@
       5: { rate: 2.10, cleaning: 1.80, furnishing: 2.20, label: '5+ BR' }
     };
 
+    // ── Retirement / livability composite ─────────────────────────────────
+    // Country-level aggregate of four public indices (International Living
+    // GRI, Natixis GRI, Numbeo Quality of Life, Global Peace Index) into a
+    // single 0-100 score (higher = better). Refresh raw values annually.
+    // Sub-national variation (e.g. Hawaii vs U.S. average) is NOT captured —
+    // this is country-level data attached to each region for context.
+    const RETIREMENT_INDEX_ASOF = '2024 reports';
+    const RETIREMENT_COUNTRY_DATA = {
+      USA:       { internationalLiving: null, natixis: 68, numbeoQoL: 166, globalPeaceIndex: 2.46 },
+      Mexico:    { internationalLiving: 84,   natixis: 48, numbeoQoL: 120, globalPeaceIndex: 2.66 },
+      CostaRica: { internationalLiving: 85,   natixis: 57, numbeoQoL: 131, globalPeaceIndex: 1.69 },
+    };
+    const REGION_TO_COUNTRY = {
+      rivieraMaya: 'Mexico', cabo: 'Mexico', costaRica: 'CostaRica',
+      bigIsland: 'USA', maui: 'USA', oahu: 'USA', kauai: 'USA',
+    };
+    const _clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+    const _normalizeRI = (country) => {
+      const d = RETIREMENT_COUNTRY_DATA[country];
+      if (!d) return null;
+      return {
+        internationalLiving: d.internationalLiving != null ? _clamp(d.internationalLiving, 0, 100) : null,
+        natixis:             d.natixis             != null ? _clamp(d.natixis, 0, 100)             : null,
+        numbeoQoL:           d.numbeoQoL           != null ? _clamp(d.numbeoQoL / 2, 0, 100)       : null,
+        globalPeaceIndex:    d.globalPeaceIndex    != null ? _clamp(((5 - d.globalPeaceIndex) / 4) * 100, 0, 100) : null,
+      };
+    };
+    const retirementIndexFor = (regionKey) => {
+      const country = REGION_TO_COUNTRY[regionKey];
+      if (!country) return null;
+      const n = _normalizeRI(country);
+      if (!n) return null;
+      const vals = Object.values(n).filter(v => v != null);
+      const score = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+      return { country, score, components: n, raw: RETIREMENT_COUNTRY_DATA[country], asOf: RETIREMENT_INDEX_ASOF };
+    };
+
     // Region presets with market-appropriate defaults (calibrated to 2BR baseline)
     const REGION_PRESETS = {
       rivieraMaya: {
@@ -1117,7 +1154,34 @@
                 <h1 className="text-2xl md:text-3xl font-bold mono">
                   STR Feasibility Calculator
                 </h1>
-                <p className="text-slate-400 text-sm">{preset.subtitle} • True Net ROI Modeling</p>
+                <p className="text-slate-400 text-sm flex flex-wrap items-center gap-x-2">
+                  <span>{preset.subtitle}</span>
+                  <span className="text-slate-600">•</span>
+                  <span>True Net ROI Modeling</span>
+                  {(() => {
+                    const ri = retirementIndexFor(region);
+                    if (!ri) return null;
+                    const c = ri.components;
+                    const tooltip =
+                      `Composite of 4 public indices (${ri.asOf}) — country: ${ri.country}\n` +
+                      `• International Living: ${c.internationalLiving != null ? c.internationalLiving.toFixed(0) + '/100' : 'n/a (USA not scored)'}\n` +
+                      `• Natixis GRI: ${c.natixis != null ? c.natixis.toFixed(0) + '/100' : 'n/a'}\n` +
+                      `• Numbeo QoL (÷2): ${c.numbeoQoL != null ? c.numbeoQoL.toFixed(0) + '/100' : 'n/a'}\n` +
+                      `• Global Peace Index (inverted): ${c.globalPeaceIndex != null ? c.globalPeaceIndex.toFixed(0) + '/100' : 'n/a'}\n\n` +
+                      `Higher = better. Country-level — sub-national variation (e.g. Hawaii vs U.S. mainland) not captured.`;
+                    return (
+                      <>
+                        <span className="text-slate-600">•</span>
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-help text-xs font-medium"
+                          title={tooltip}
+                        >
+                          🌴 Retirement {ri.score}/100
+                        </span>
+                      </>
+                    );
+                  })()}
+                </p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-3">
