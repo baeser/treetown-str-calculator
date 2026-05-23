@@ -1675,7 +1675,7 @@
                                     {scannerLastRun ? new Date(scannerLastRun.at).toLocaleString() : '—'}
                                   </div>
                                   <div className="text-xs text-slate-500 mt-1">
-                                    {scannerLastRun?.status || ''}{scannerLastRun?.matches != null ? ` · ${scannerLastRun.matches} matches` : ''}
+                                    {(scannerLastRun && scannerLastRun.status) || ''}{scannerLastRun && scannerLastRun.matches != null ? ` · ${scannerLastRun.matches} matches` : ''}
                                   </div>
                                 </div>
                                 <div className="bg-slate-900/40 border border-slate-700/50 rounded-xl p-4">
