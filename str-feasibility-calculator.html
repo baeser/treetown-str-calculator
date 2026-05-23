@@ -520,6 +520,30 @@
         }
       }, [ghToken, ghRepo, scannerConfig, scannerConfigSha]);
 
+      // Lightweight refresh — only the dynamic parts (runs + last-run, no config/seen).
+      // Used by the auto-poll loop so we don't hammer the API.
+      const pollRunStatus = useCallback(async () => {
+        if (!ghToken) return;
+        try {
+          const runs = await ghFetch(ghToken, 'GET', `/repos/${ghRepo}/actions/runs?per_page=10`);
+          setScannerRuns(runs.workflow_runs || []);
+        } catch { /* silent on poll errors — don't spam UI */ }
+        try {
+          const lr = await ghGetFile(ghToken, ghRepo, 'data/last-run.json');
+          setScannerLastRun(JSON.parse(lr.content));
+        } catch { /* leave as-is */ }
+      }, [ghToken, ghRepo]);
+
+      // Auto-poll every 10s while the Scanner tab is open AND any run is in progress.
+      // When all runs complete, the next effect run sees no active runs and skips the
+      // interval setup — polling naturally stops.
+      const hasActiveRun = scannerRuns.some(r => r.status !== 'completed');
+      useEffect(() => {
+        if (activeTab !== 'scanner' || !hasActiveRun || !ghToken) return;
+        const id = setInterval(pollRunStatus, 10000);
+        return () => clearInterval(id);
+      }, [activeTab, hasActiveRun, ghToken, pollRunStatus]);
+
       const triggerScannerRun = useCallback(async () => {
         if (!ghToken) return;
         if (scannerDirty && !window.confirm('You have unsaved config changes. Run anyway with the OLD config?')) return;
@@ -530,9 +554,9 @@
             ref: 'main',
             inputs: { force: 'true' },
           });
-          setScannerStatus('Triggered run. Refresh in ~15s to see it in recent runs.');
-          // Auto-refresh after 8s to pick up the new run
-          setTimeout(() => loadScannerData(), 8000);
+          setScannerStatus('Triggered run. Dashboard will auto-poll until it finishes.');
+          // Quick first refresh to surface the queued run; auto-poll takes over after that
+          setTimeout(() => loadScannerData(), 5000);
         } catch (e) {
           setScannerError(e.message);
         } finally {
@@ -1537,6 +1561,12 @@
                             <span className="w-2 h-2 rounded-full bg-emerald-400" /> Connected
                           </span>
                           <span className="text-xs text-slate-400 font-mono">{ghRepo}</span>
+                          {hasActiveRun && (
+                            <span className="text-xs text-sky-400 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                              auto-polling every 10s
+                            </span>
+                          )}
                           <span className="text-xs text-slate-600 ml-auto">{scannerStatus}</span>
                           <button onClick={loadScannerData} disabled={scannerLoading} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md transition-colors disabled:opacity-50">
                             {scannerLoading ? '…' : 'Refresh'}
