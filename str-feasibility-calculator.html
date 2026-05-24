@@ -1794,6 +1794,25 @@
                                 checked={scannerConfig.hawaii.skipLeasehold}
                                 onChange={(v) => updateScannerConfig('hawaii.skipLeasehold', v)}
                               />
+                              <p className="text-xs text-slate-400 mt-4 mb-2">
+                                <strong className="text-slate-300">Big Island lava zone gates</strong> — hazard rating 1 (most dangerous) to 9 (least). Big Island only; other islands have no active lava zone hazard.
+                              </p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                <InputGroup
+                                  label="Block lava zones ≤"
+                                  value={scannerConfig.hawaii.bigIslandMaxBlockedLavaZone ?? 2}
+                                  onChange={(v) => updateScannerConfig('hawaii.bigIslandMaxBlockedLavaZone', v)}
+                                  min={0} max={9} step={1}
+                                  tooltip="Any Big Island listing in this lava zone or lower is skipped entirely — no Discord alert, regardless of tier."
+                                />
+                                <InputGroup
+                                  label="Warn lava zones ≤"
+                                  value={scannerConfig.hawaii.bigIslandMaxWarnLavaZone ?? 3}
+                                  onChange={(v) => updateScannerConfig('hawaii.bigIslandMaxWarnLavaZone', v)}
+                                  min={0} max={9} step={1}
+                                  tooltip="Lava zones above the 'block' threshold but ≤ this value get a prominent warning line at the top of the Discord embed. Zones above this are silent."
+                                />
+                              </div>
                             </div>
 
                             {/* Status panel */}
