@@ -1811,9 +1811,34 @@
                                 min={0} step={10000}
                                 tooltip="Optional budget filter. Set to 0 to disable. When >0, the scanner skips any listing whose required down payment (price × active down %) exceeds this amount. Note: this checks the down payment only — closing costs (3-5% of price) and furnishing ($15-20k) are NOT included, so your actual cash needed will be ~25-30% higher than the down payment."
                               />
-                              <p className="text-xs text-slate-500 mt-2">
-                                With $200k available at 25% down (Hawaii default), affordable cap = $800k. At 30% down (Mexico) = $666k. At 35% down (Costa Rica) = $571k. Override the down payment % above to change the affordable cap proportionally.
+                              <p className="text-xs text-slate-500 mt-2 mb-4">
+                                With $200k available at 25% down (Hawaii default), affordable cap = $800k. At 30% down (Mexico) = $666k. At 35% down (Costa Rica) = $571k.
                               </p>
+
+                              <div className="border-t border-slate-700/30 pt-4 mt-2">
+                                <p className="text-xs text-slate-400 mb-2">
+                                  <strong className="text-slate-300">Furnishing override</strong> — most listings include MLS-default furnishing assumptions. Toggle on + set to <code className="text-amber-400">0</code> when the listings you're targeting are <strong>turnkey</strong> (no setup capex needed). Region defaults: Hawaii $16-20k · Mexico $15-18k · CR $14k (all scaled by bedroom count).
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                  <Toggle
+                                    label="Override furnishing cost"
+                                    checked={scannerConfig.financing?.overrideFurnishing ?? false}
+                                    onChange={(v) => updateScannerConfig('financing.overrideFurnishing', v)}
+                                    tooltip="When ON, every region uses the furnishing $ below instead of its bedroom-scaled preset default."
+                                  />
+                                  <InputGroup
+                                    label="Furnishing cost"
+                                    value={scannerConfig.financing?.furnishingCost ?? 0}
+                                    onChange={(v) => updateScannerConfig('financing.furnishingCost', v)}
+                                    prefix="$"
+                                    min={0} step={1000}
+                                    tooltip="Used only when the toggle is ON. 0 = fully turnkey (no setup capex)."
+                                  />
+                                </div>
+                                <p className="text-xs text-amber-400/70 mt-2">
+                                  ⚠️ Counterintuitive interaction: lowering furnishing reduces total cash invested, which IMPROVES COC for positive-cash-flow listings but makes COC MORE NEGATIVE for negative-cash-flow ones. Turnkey mode is most useful in combination with a higher down payment % that pushes cash flow positive.
+                                </p>
+                              </div>
                             </div>
 
                             {/* Hawaii adjustments */}
