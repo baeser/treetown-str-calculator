@@ -1803,6 +1803,17 @@
                                   tooltip="Used only when the toggle above is ON. 100 = all-cash purchase (no debt service)."
                                 />
                               </div>
+                              <InputGroup
+                                label="Down payment cash available"
+                                value={scannerConfig.financing?.downPaymentAvailable ?? 0}
+                                onChange={(v) => updateScannerConfig('financing.downPaymentAvailable', v)}
+                                prefix="$"
+                                min={0} step={10000}
+                                tooltip="Optional budget filter. Set to 0 to disable. When >0, the scanner skips any listing whose required down payment (price × active down %) exceeds this amount. Note: this checks the down payment only — closing costs (3-5% of price) and furnishing ($15-20k) are NOT included, so your actual cash needed will be ~25-30% higher than the down payment."
+                              />
+                              <p className="text-xs text-slate-500 mt-2">
+                                With $200k available at 25% down (Hawaii default), affordable cap = $800k. At 30% down (Mexico) = $666k. At 35% down (Costa Rica) = $571k. Override the down payment % above to change the affordable cap proportionally.
+                              </p>
                             </div>
 
                             {/* Hawaii adjustments */}
