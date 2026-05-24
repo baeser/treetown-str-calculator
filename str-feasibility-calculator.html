@@ -1778,10 +1778,37 @@
                               />
                             </div>
 
-                            {/* Hawaii adjustments */}
+                            {/* Financing override */}
                             <div className="md:col-span-2 border-t border-slate-700/50 pt-5 mt-2">
                               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                                 <span className="w-6 h-6 rounded bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs">6</span>
+                                Financing Override
+                              </h3>
+                              <p className="text-xs text-slate-400 mb-3">
+                                Down payment % is the single biggest lever on COC at these price points. Region defaults: <strong className="text-slate-300">Hawaii 25%</strong> · <strong className="text-slate-300">Mexico 30%</strong> · <strong className="text-slate-300">Costa Rica 35%</strong>. Toggle on to override every region with a single value (e.g. <code className="text-amber-400">100</code> to model an all-cash purchase, or <code className="text-amber-400">50</code> for a higher-equity strategy).
+                              </p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                <Toggle
+                                  label="Override preset down payment"
+                                  checked={scannerConfig.financing?.overrideDownPayment ?? false}
+                                  onChange={(v) => updateScannerConfig('financing.overrideDownPayment', v)}
+                                  tooltip="When ON, every region uses the down payment % below instead of its preset default."
+                                />
+                                <InputGroup
+                                  label="Down payment %"
+                                  value={scannerConfig.financing?.downPaymentPercent ?? 25}
+                                  onChange={(v) => updateScannerConfig('financing.downPaymentPercent', v)}
+                                  suffix="%"
+                                  min={0} max={100} step={5}
+                                  tooltip="Used only when the toggle above is ON. 100 = all-cash purchase (no debt service)."
+                                />
+                              </div>
+                            </div>
+
+                            {/* Hawaii adjustments */}
+                            <div className="md:col-span-2 border-t border-slate-700/50 pt-5 mt-2">
+                              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                <span className="w-6 h-6 rounded bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs">7</span>
                                 Hawaii-Specific Adjustments
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
@@ -1824,7 +1851,7 @@
                             {/* Status panel */}
                             <div className="md:col-span-2 border-t border-slate-700/50 pt-5 mt-2">
                               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <span className="w-6 h-6 rounded bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs">7</span>
+                                <span className="w-6 h-6 rounded bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs">8</span>
                                 Scanner Status
                               </h3>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
