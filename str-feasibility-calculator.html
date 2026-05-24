@@ -1794,6 +1794,12 @@
                                 checked={scannerConfig.hawaii.skipLeasehold}
                                 onChange={(v) => updateScannerConfig('hawaii.skipLeasehold', v)}
                               />
+                              <Toggle
+                                label="Block listings explicitly marked STR-not-allowed"
+                                checked={scannerConfig.hawaii.blockStrDisallowed ?? false}
+                                onChange={(v) => updateScannerConfig('hawaii.blockStrDisallowed', v)}
+                                tooltip="When ON, listings with strAllowed=false (explicit MLS declaration) are skipped entirely — no Discord alert. Listings where the flag is null/unclear are NOT blocked (current penalty still applies). Most non-Hawaii sources don't expose this field, so the toggle effectively only filters Hawaii Life listings today."
+                              />
                               <p className="text-xs text-slate-400 mt-4 mb-2">
                                 <strong className="text-slate-300">Big Island lava zone gates</strong> — hazard rating 1 (most dangerous) to 9 (least). Big Island only; other islands have no active lava zone hazard.
                               </p>
